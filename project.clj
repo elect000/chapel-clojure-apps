@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/core.async "0.3.443"]
                  [opencv/opencv "3.3.1"]
-                 [opencv/opencv-native "3.3.1"]]
-  :injections [(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)]
-  :main chapel-clojure-app.core
-)
+                 [opencv/opencv-native "3.3.1"]
+                 [seesaw "1.4.5"]]
+;;  :injections [(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)]
+  :main chapel-clojure-app.core)
