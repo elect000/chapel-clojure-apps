@@ -1,7 +1,7 @@
 use DynamicIters;
 
 config const n = 1600,
-  maxIter = 50,
+  maxIter = 150,
   limit = 4.0,
   chunkSize = 1,
   size = 2.0,

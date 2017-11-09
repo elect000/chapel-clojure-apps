@@ -105,7 +105,6 @@
                    :on-close :exit
                    :listen [:key-pressed
                             (fn [e]
-                              (println (= KeyEvent/VK_UP (.getKeyCode e)))
                               (let [key (.getKeyCode e)
                                     pos @refpos
                                     size (:size pos)
@@ -135,7 +134,6 @@
                                   (ref-set refpos new-pos))
                                  (redraw @refpos)
                                  (core/config! (core/select (core/to-root e) [:#label]) :icon (img))
-                                 (core/repaint! (core/select (core/to-root e) [:#label]))
-                                 (println new-pos)))]))
+                                 (core/repaint! (core/select (core/to-root e) [:#label]))))]))
        core/pack!
        core/show!)))
