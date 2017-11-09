@@ -93,7 +93,7 @@
     {:size (/ size 2) :xstart (+ xstart (/ size 4)) :ystart (+ ystart (/ size 4))}
     (= key KeyEvent/VK_DOWN)
     {:size (* size 2) :xstart (- xstart (/ size 4)) :ystart (- ystart (/ size 4))}
-    ;; :default {:size size :xstart xstart :ystart ystart}
+    :default {:size size :xstart xstart :ystart ystart}
     ))
 
 (defn -main
@@ -116,8 +116,7 @@
                                  (ref-set refpos new-pos))
                                 (redraw @refpos)
                                 (core/config! (core/select (core/to-root e) [:#label]) :icon (img))
-                                (core/repaint! (core/select (core/to-root e) [:#label]))
-                                (println new-pos))
+                                (core/repaint! (core/select (core/to-root e) [:#label])))
                               )]
                    :content
                    (core/label
