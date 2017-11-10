@@ -1,3 +1,4 @@
+
 (defproject chapel-clojure-app "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
@@ -8,5 +9,5 @@
                  [opencv/opencv "3.3.1"]
                  [opencv/opencv-native "3.3.1"]
                  [seesaw "1.4.5"]]
-;;  :injections [(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)]
+  :injections [(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)]
   :main chapel-clojure-app.core)
