@@ -46,7 +46,7 @@ proc main() {
 
   var w = openfd(1).writer(iokind.native, locking=false);
 
-  w.writef("P4\n");
-  w.writef("%i %i\n", n, n);
+//  w.writef("P4\n");
+//  w.writef("%i %i\n", n, n);
   w.write(imageSpace);
 }

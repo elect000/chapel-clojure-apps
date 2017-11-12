@@ -3,63 +3,82 @@
             [clojure.core.async :as async]
             [seesaw.core :as core]
             [seesaw.graphics :as g]
-            [seesaw.dev :as dev])
+            [seesaw.dev :as dev]
+            [clojure.java.io :refer [output-stream input-stream]]
+            [clojure.pprint :refer (cl-format)])
   (:import [java.awt.image BufferedImage]
            [javax.swing JFrame JLabel ImageIcon WindowConstants SwingUtilities]
            [java.awt.event KeyEvent]
            [java.awt Graphics2D]
-           [org.opencv.core Core Mat CvType]
-           [org.opencv.imgcodecs Imgcodecs]
-           [org.opencv.imgproc Imgproc])
+           [java.awt Color])
   (:use [clojure.java.shell :only [sh]])
   (:gen-class))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; initial
-(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; draw mandelbrot buffered-image with Chapel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn get-binary
+  " require PBM file's 8bit-binary-data
+    return clojure.lang.PersistentVector "
+  []
+  (with-open [in (input-stream (io/resource "binary-data"))]
+    (let [buf (byte-array (* 640 640))
+          n (.read in buf)]
+      (vec buf))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; draw mandelbrot with Chapel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn mat->buffered-image [mat]
-  (let [gray? (= (.channels mat) 1)
-        image-type (if gray?
-               BufferedImage/TYPE_BYTE_GRAY
-               BufferedImage/TYPE_3BYTE_BGR)
-        buffered-image (g/buffered-image (.width mat) (.height mat) image-type)
-        ;; sun.awt.image.BufferedImage
-        raster (.getRaster buffered-image)
-        ;; java.awt.image.ByteInterleavedRaster
-        byte-pixels (-> raster
-                        (.getDataBuffer) ;; java.awt.image.DataBufferByte
-                        (.getData)) ;; byte array
-        buffer (byte-array (* (.width mat) (.height mat) (if gray? 1 3)))
-        ;; 3byte -> rgb-color / 1byte -> Gray-color
-        ]
-    (.get mat 0 0 buffer) ;; buffer <- mat-data
-    (System/arraycopy buffer 0 byte-pixels 0 (alength buffer))
+(defn byte-array->color-array
+  " return lazy-seq (int (java.awt.color))"
+  [^clojure.lang.PersistentVector byte-array]
+  (let [binary-array byte-array
+        black (.getRGB Color/BLACK)
+        white (.getRGB Color/WHITE)
+        new-int (for [i binary-array]
+                  (loop [c 0
+                         acc (list)]
+                    (if (< c 8)
+                      (if (= 0 (bit-and (bit-shift-right i c) 0x01))
+                        (recur (inc c) (conj acc black))
+                        (recur (inc c) (conj acc white)))
+                      acc)))]
+    (reduce into [] new-int)))
+
+(defn color-array->buffered-image
+  " return buffered-image"
+  [^clojure.lang.PersistentVector color-array]
+  (let [array (int-array color-array)
+        buffered-image (BufferedImage. 640 640 BufferedImage/TYPE_4BYTE_ABGR)
+        _ (.setRGB buffered-image 0 0 640 640 array 0 640)]
     buffered-image))
 
+(println (io/resource "my-mandelbrot-chapel"))
 (defn redraw [{:keys [size xstart ystart]}]
-  (let [n "--n=600"
+  (let [n " --n=640"
         size (str " --size=" size)
         xstart (str " --xstart=" xstart)
         ystart (str " --ystart=" ystart)
-        program (str " " (io/file (io/resource "../resources/my-mandelbrot-chapell")))
-        path (str (io/file (io/resource "../resources/image4.pbm")))]
-    (sh "bash" "-c" (str program size xstart ystart " --n=600 " " > " path))))
+        program  (io/file (io/resource "my-mandelbrot-chapel")) 
+        path  (io/file (io/resource "binary-data"))
+        ]
+    (prn (sh "bash" "-c" (str program xstart ystart size n" > " path)))))
 
-(defn mandelbrot-image []
-  (Imgcodecs/imread (str (io/file (io/resource "../resources/image4.pbm")))))
-;; org.opencv.core.Mat
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; attributes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn img []
-  (mat->buffered-image (mandelbrot-image)))
+  (color-array->buffered-image (byte-array->color-array (get-binary))))
 
+;; init state
 (def initial-pos {:size 2.0 :xstart -1.5 :ystart -1.0})
 (defonce refpos (ref initial-pos))
 (defonce _ (redraw {:size 2.0 :xstart -1.5 :ystart -1.0}))
-;; init image
+
+(add-watch refpos :watcher
+           (fn [key ref old-value new-value]
+             (println "old: " old-value
+                      " new: " new-value)))
+
+
+;; declare move direction
 (defn position [n]
   (cond (> n 400) 3
         (> n 200) 2
@@ -96,12 +115,15 @@
     :default {:size size :xstart xstart :ystart ystart}
     ))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; frame ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn -main
-  [& args]
+  [& args] 
   (core/invoke-later
    (-> (core/frame :id :f
                    :title "Fractal: Mandelbrot"
-                   :size [600 :by 600]
+                   :size [640 :by 640]
                    :on-close :exit
                    :listen [:key-pressed
                             (fn [e]
@@ -112,10 +134,12 @@
                                     ystart (:ystart pos)
                                     new-pos (set-new-pos2 key size xstart ystart)]
                                 (dosync
-                                 (ref-set refpos new-pos))
-                                (redraw @refpos)
-                                (core/config! (core/select (core/to-root e) [:#label]) :icon (img))
-                                (core/repaint! (core/select (core/to-root e) [:#label])))
+                                 (ref-set refpos new-pos)
+                                 (redraw @refpos))
+                                (core/config!
+                                 (core/select (core/to-root e) [:#label]) :icon (img))
+                                (core/repaint!
+                                 (core/select (core/to-root e) [:#label])))
                               )]
                    :content
                    (core/label
@@ -131,9 +155,12 @@
                                      ystart (:ystart pos)
                                      new-pos (set-new-pos x y size xstart ystart)]
                                  (dosync
-                                  (ref-set refpos new-pos))
-                                 (redraw @refpos)
-                                 (core/config! (core/select (core/to-root e) [:#label]) :icon (img))
-                                 (core/repaint! (core/select (core/to-root e) [:#label]))))]))
+                                  (ref-set refpos new-pos)
+                                  (redraw @refpos))
+                                 (core/config!
+                                  (core/select (core/to-root e) [:#label]) :icon (img))
+                                 (core/repaint!
+                                  (core/select (core/to-root e) [:#label]))))]))
        core/pack!
        core/show!)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

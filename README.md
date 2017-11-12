@@ -1,14 +1,21 @@
 # chapel-clojure-app
 
-This is for Linux
-
 ## Installation
 
+    $ git clone https://github.com/elect000/chapel-clojure-apps ccapps 
+    $ cd ccapps
+1. from leiningen
 
+        $ lein run
+2. from jar
 
+        $ lein uberjar
+        $ cd target 
+        $ java -jar chapel-clojure-app-0.1.0-standalone.jar 
 ## Usage
 
-FIXME: explanation
+Click : move
+Up/Down arrow-key : zoom in/out
 
     $ lein run
 ## Options
