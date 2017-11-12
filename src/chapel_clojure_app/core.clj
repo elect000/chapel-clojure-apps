@@ -56,7 +56,7 @@
         size (str " --size=" size)
         xstart (str " --xstart=" xstart)
         ystart (str " --ystart=" ystart)
-        program  (io/file (io/resource "my-mandelbrot-chapel")) 
+        program (io/file (io/resource "my-mandelbrot-chapel")) 
         path  (io/file (io/resource "binary-data"))
         ]
     (prn (sh "bash" "-c" (str program xstart ystart size n" > " path)))))
