@@ -17,16 +17,23 @@
 ## Usage
 
 Click : move
+
 Up/Down arrow-key : zoom in/out
 
 ## Options
    If you want to get pbm-image, you can use this executable file.
-    The Image
-        - from --xstart to --xstart + --size 
-        - from --ystart to --ystart + --size
-        - n * n pixels 
-        - iterate --maxIter
-        - limit --imit
+
+The Image
+
+    - from --xstart to --xstart + --size 
+    
+    - from --ystart to --ystart + --size
+    
+    - n * n pixels 
+    
+    - iterate --maxIter
+    
+    - limit --imit
         
     $ cd resources
     $ ./my-mandelbrot-chapel --n=600 --xstart=-1.5 --ystart=-1.0 --size=2.0 --maxIter=150 > image.pbm
