@@ -1,7 +1,11 @@
-# chapel-clojure-app
- This program is for linux (or Mac) 
- In Windows, This program will occure JVM error: A Java Exception has occured.
+# Show MandelBrot Fractal
+## chapel-clojure-app
 
+ This program is for linux (or Mac) 
+ 
+ In Windows, This program will occure JVM error: A Java Exception has occured.
+  
+  
 ## Installation
 
     $ git clone https://github.com/elect000/chapel-clojure-apps ccapps 
