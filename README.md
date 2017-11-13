@@ -5,7 +5,7 @@
  
  In Windows, This program will occure JVM error: A Java Exception has occured.
 
-  ![](./capture1.PNG)
+  ![](./capture2.PNG)
   
 ## Installation
 
