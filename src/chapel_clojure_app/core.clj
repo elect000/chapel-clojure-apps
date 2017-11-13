@@ -15,13 +15,38 @@
   (:gen-class))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; init temporary-file ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn copy-file [^java.io.File file ^java.io.BufferedInputStream stream]
+  (with-open [in stream
+              out (output-stream file)]
+    (io/copy in out))
+  file)
+
+;; (copy-file (io/file exec-file) (io/input-stream (io/resource "my-mandelbrot-chapel")))
+
+(defonce exec-file (if-not (.exists (io/as-file "temp"))
+                     (let [file (java.io.File/createTempFile "temp" "")
+                           _ (.deleteOnExit file)
+                           _ (sh "sh" "-c" (str "chmod +x " file))]
+                       (copy-file file
+                                  (io/input-stream
+                                   (io/resource "my-mandelbrot-chapel"))))
+                     (copy-file  (io/file "temp")
+                                 (io/input-stream
+                                  (io/resource "my-mandelbrot-chapel")))))
+(defonce image-file (if-not (.exists (io/as-file "image"))
+                      (let [file (java.io.File/createTempFile "image" "")
+                            _ (.deleteOnExit file)]
+                        file)
+                      (io/file "image")))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; draw mandelbrot buffered-image with Chapel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn get-binary
   " require PBM file's 8bit-binary-data
     return clojure.lang.PersistentVector "
   []
-  (with-open [in (input-stream (io/resource "binary-data"))]
+  (with-open [in (input-stream image-file)]
     (let [buf (byte-array (* 640 640))
           n (.read in buf)]
       (vec buf))))
@@ -50,16 +75,16 @@
         _ (.setRGB buffered-image 0 0 640 640 array 0 640)]
     buffered-image))
 
-(println (io/resource "my-mandelbrot-chapel"))
+
 (defn redraw [{:keys [size xstart ystart]}]
   (let [n " --n=640"
         size (str " --size=" size)
         xstart (str " --xstart=" xstart)
         ystart (str " --ystart=" ystart)
-        program (io/file (io/resource "my-mandelbrot-chapel")) 
-        path  (io/file (io/resource "binary-data"))
+        program (io/file exec-file)
+        path  (io/file image-file)
         ]
-    (prn (sh "bash" "-c" (str program xstart ystart size n" > " path)))))
+    (prn (sh "sh" "-c" (str program xstart ystart size n" > " path)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; attributes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
