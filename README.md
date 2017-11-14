@@ -1,5 +1,12 @@
-# chapel-clojure-app
+# Show MandelBrot Fractal
+## chapel-clojure-app
 
+ This program is for linux (or Mac) 
+ 
+ In Windows, This program will occure JVM error: A Java Exception has occured.
+
+  ![](./capture2.PNG)
+  
 ## Installation
 
     $ git clone https://github.com/elect000/chapel-clojure-apps ccapps 
@@ -15,21 +22,30 @@
 ## Usage
 
 Click : move
+
 Up/Down arrow-key : zoom in/out
 
-    $ lein run
 ## Options
+   If you want to get pbm-image, you can use this executable file.
 
+   The Image
 
+   - from --xstart to --xstart + --size 
+    
+   - from --ystart to --ystart + --size
+    
+   - n * n pixels 
+    
+   - iterate --maxIter
+    
+   - limit --imit
+        
+    $ cd resources
+    $ ./my-mandelbrot-chapel --n=600 --xstart=-1.5 --ystart=-1.0 --size=2.0 --maxIter=150 > image.pbm
 
 ### Bugs
 
-We cannot use ```lein uberjar``` and  ```java -jar ...-standalone.jar ```
-Because JVM cannot find opencv
-
-### Any Other Sections
-### That You Think
-### Might be Useful
+ In Windows This programi will brake ... I don't know how to fix it.
 
 ## License
 
