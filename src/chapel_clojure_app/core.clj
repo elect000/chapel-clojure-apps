@@ -22,8 +22,6 @@
     (io/copy in out))
   file)
 
-;; (copy-file (io/file exec-file) (io/input-stream (io/resource "my-mandelbrot-chapel")))
-
 (defonce exec-file (if-not (.exists (io/as-file "temp"))
                      (let [file (java.io.File/createTempFile "temp" "")
                            _ (.deleteOnExit file)
@@ -34,22 +32,17 @@
                      (copy-file  (io/file "temp")
                                  (io/input-stream
                                   (io/resource "my-mandelbrot-chapel")))))
-(defonce image-file (if-not (.exists (io/as-file "image"))
-                      (let [file (java.io.File/createTempFile "image" "")
-                            _ (.deleteOnExit file)]
-                        file)
-                      (io/file "image")))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; draw mandelbrot buffered-image with Chapel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defonce image-data (ref nil))
+
 (defn get-binary
-  " require PBM file's 8bit-binary-data
+  " require nothing
     return clojure.lang.PersistentVector "
   []
-  (with-open [in (input-stream image-file)]
-    (let [buf (byte-array (* 640 640))
-          n (.read in buf)]
-      (vec buf))))
+  @image-data
+  )
 
 (defn byte-array->color-array
   " return lazy-seq (int (java.awt.color))"
@@ -82,9 +75,10 @@
         xstart (str " --xstart=" xstart)
         ystart (str " --ystart=" ystart)
         program (io/file exec-file)
-        path  (io/file image-file)
         ]
-    (prn (sh "sh" "-c" (str program xstart ystart size n" > " path)))))
+    (dosync
+     (ref-set image-data  (:out (sh "sh" "-c" (str program xstart ystart size n) :out-enc :bytes)))))
+  (println ""))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; attributes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
